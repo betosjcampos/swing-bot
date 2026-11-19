@@ -50,7 +50,7 @@ def monitorar():
                 print(f"{ativo} inicial {preco}")
                 continue
             ultimo = estado[ativo]
-            if ultimo - preco >= 0.25:
+            if ultimo - preco >= 0.01:
                 agora = datetime.now(FUSO).strftime("%d/%m %H:%M")
                 msg = f"Queda R$0,25+ {ativo} De R${ultimo:.2f} -> R${preco:.2f} {agora}"
                 print(msg)
