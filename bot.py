@@ -7,8 +7,8 @@ from flask import Flask
 from datetime import datetime
 import pytz
 
-TELEGRAM_TOKEN = "SEU_TOKEN_AQUI"
-TELEGRAM_CHAT_ID = "SEU_ID_AQUI"
+TELEGRAM_TOKEN = "8956757137:AAHRWYaSvAvYVBjN2rGEmrebNlbvV-LGDfM"
+TELEGRAM_CHAT_ID = "8889605441"
 ACOES = ["PETR4.SA","VALE3.SA","ITUB4.SA","BBDC4.SA","WEGE3.SA","MGLU3.SA","BBAS3.SA","PRIO3.SA","JBSS3.SA","RAIL3.SA"]
 estado = {}
 FUSO = pytz.timezone("America/Sao_Paulo")
