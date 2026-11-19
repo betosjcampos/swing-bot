@@ -2,6 +2,7 @@ import yfinance as yf
 import requests
 import threading
 import time
+import random
 from flask import Flask
 from datetime import datetime
 import pytz
@@ -13,7 +14,6 @@ estado = {}
 FUSO = pytz.timezone("America/Sao_Paulo")
 
 app = Flask(__name__)
-
 @app.route('/')
 def home():
     return "Robo swing trade rodando!"
@@ -24,27 +24,41 @@ def enviar_telegram(msg):
         requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": msg}, timeout=10)
     except: pass
 
+def get_preco_com_retry(ticker_str):
+    for tentativa in range(3):
+        try:
+            t = yf.Ticker(ticker_str)
+            # tenta pegar 5 minutos pra evitar bloqueio
+            hist = t.history(period="5d", interval="1m")
+            if not hist.empty:
+                return float(hist['Close'].dropna().iloc[-1])
+            time.sleep(2 + random.random()*2)
+        except Exception as e:
+            print(f"Tentativa {tentativa+1} falhou {ticker_str}: {e}")
+            time.sleep(5)
+    return None
+
 def monitorar():
     print("Robo iniciado")
     while True:
         for ativo in ACOES:
-            try:
-                preco = float(yf.Ticker(ativo).history(period="1d", interval="1m")['Close'].iloc[-1])
-                if ativo not in estado:
-                    estado[ativo] = preco
-                    continue
-                ultimo = estado[ativo]
-                if ultimo - preco >= 0.25:
-                    agora = datetime.now(FUSO).strftime("%d/%m %H:%M")
-                    msg = f"Queda R$0,25+ {ativo} De R${ultimo:.2f} -> R${preco:.2f} {agora}"
-                    print(msg)
-                    enviar_telegram(msg)
-                    estado[ativo] = preco
-                if preco > ultimo + 1:
-                    estado[ativo] = preco
-            except:
-                pass
-        time.sleep(60)
+            preco = get_preco_com_retry(ativo)
+            if preco is None:
+                continue
+            if ativo not in estado:
+                estado[ativo] = preco
+                print(f"{ativo} inicial {preco}")
+                continue
+            ultimo = estado[ativo]
+            if ultimo - preco >= 0.25:
+                agora = datetime.now(FUSO).strftime("%d/%m %H:%M")
+                msg = f"Queda R$0,25+ {ativo} De R${ultimo:.2f} -> R${preco:.2f} {agora}"
+                print(msg)
+                enviar_telegram(msg)
+                estado[ativo] = preco
+            if preco > ultimo + 1:
+                estado[ativo] = preco
+        time.sleep(70)
 
 threading.Thread(target=monitorar, daemon=True).start()
 
